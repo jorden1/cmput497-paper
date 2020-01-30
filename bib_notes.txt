@@ -1,0 +1,12 @@
+@conference{REFNAME,
+    author = "{}",
+    title = "{}",
+    booktitle = "{}",
+    pages = "{a--b}",
+    numpages = "{}",
+    month = "{}",
+    year = "{}",
+    publisher = "{}",
+    address = "{}",
+    DOI = ""
+}

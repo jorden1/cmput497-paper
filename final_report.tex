@@ -1,0 +1,296 @@
+ % \documentclass[sigplan,10pt,review,anonymous]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\documentclass[sigplan,10pt,review, nonacm=true]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+% TODO: I set review=false to remove red lines cause kinda ugly, but it was there
+% by default, so we should include in submission?
+% TODO also I added nonacm=true to get rid of the weird conference thing, idk if we should
+\usepackage{listings}
+\usepackage{color}
+% \usepackage[toc,page]{appendix}
+% \usepackage{natbib}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\bibliographystyle{ACM-Reference-Format}
+\citestyle{acmnumeric}
+% NOTE this is commonly used
+% \setcitestyle{nosort}
+
+% JavaScript language support syntax
+% https://tex.stackexchange.com/questions/89574/language-option-supported-in-listings
+% User: sternAndy
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, false, finally, for, function, if, in, instanceof, new, null, return, switch, this, throw, true, try, typeof, var, void, while, with},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  sensitive=true
+}
+\lstset{
+   language=JavaScript,
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
+\graphicspath{ {../images/pngs/} }
+
+\startPage{1}
+
+\begin{document}
+
+% TODO better title
+\title[]{An Analysis of Obfuscated Malicious JavaScript}         %% [Short Title] is optional;
+                                        %% when present, will be used in
+                                        %% header instead of Full Title.
+% \titlenote{with title note}             %% \titlenote is optional;
+                                        %% can be repeated if necessary;
+                                        %% contents suppressed with 'anonymous'
+% \subtitle{Subtitle}                     %% \subtitle is optional
+% \subtitlenote{with subtitle note}
+% TODO I also set the copyright to none but idk if we should
+\setcopyright{none}
+% TODO Also merge in My name and Jordens
+\author{Nicholas Whitefield and Jorden Hansen}
+\affiliation{
+  \institution{University of Alberta}            %% \institution is required
+  \country{Canada}                               %% \country is recommended
+}
+\email{{whitefie, jorden1}@ualberta.ca}
+
+% \author{Jorden Hansen}
+% \affiliation{
+%   \institution{University of Alberta}            %% \institution is required
+%   \country{Canada}                    %% \country is recommended
+% }
+% \email{jorden1@ualberta.ca}
+
+\begin{abstract}
+JavaScript's popularity has grown rapidly in recent years, showing up in all areas of web development \cite{JavascriptIsPopular}. With the rise of JavaScript, there is also an increase in malicious JavaScript code. We aim to identify some weaknesses of current malware detection tools, as well as identify how different methods of obfuscation perform on these tools. By conducting a survey on a sample of 1000 malicious JavaScript files, we observe how the obfuscation methods perform. We selected 6 different obfuscation methods, which we applied both individually as well as all possible pairings, totalling 21000 obfuscated JavaScript files. After removing tools we determined to be too ineffective at detecting malicious files, we were left with 18 tools which we used to analyse the obfuscated files.
+\end{abstract}
+
+% TODO more keywords
+\keywords{JavaScript, Obfuscation, Malware, Program Analysis}  %% \keywords are mandatory in final camera-ready submission
+
+\maketitle
+
+\section{Introduction}
+
+Malware is becoming more and more of a societal issue, with the rise of ransomware attacks and large scale data breaches, there is a greater need for stronger malware detection methods. One of the many challenges with malware analysis is that malware can be modified to be intentionally difficult to analyse due to obfuscation. Therefore, it is necessary for malware detection tools to be able to see through obfuscation attempts. In this paper we explore six different types of obfuscation methods and observe how they impact the detection rates among a variety of different analysis tools.
+In our research, we focus exclusively on malicious JavaScript files, we do this for two main reasons: the first being that it was the most abundant form of malware we found, and the second being that JavaScript is supported by a large number of tools and libraries, which allowed us to focus more on getting results and less on building the tools required to create our dataset.
+
+\subsection{Obfuscation}
+Obfuscation is the process of converting code into a more convoluted version of itself, without introducing any changes to the intended behaviour. From the perspective of an attacker, obfuscation is a useful technique as it weakens a victim's ability to understand and analyse the malicious program. With this in mind, techniques have been proposed that aim to detect malware by first detecting obfuscation and using that as a measure of malice \cite{Blanc}. However, we cannot simply consider any obfuscated program to be malicious, as there exists valid non-malicious use cases for obfuscation in both academia and industry \cite{Blanc}. A notable application for such obfuscation is to prevent thieves from reverse engineering proprietary algorithms, which can be very costly to research and develop and difficult to pursue legally when theft does occur \cite{Colberg}. Obfuscation applied with non-malicious intent is referred to as \textit{benign obfuscation} \cite{XuZhang}.
+
+\section{Implementation}
+
+There are a number of tools that we used to create and gather our results. For the obfuscation of our dataset, we used an open source JavaScript obfuscator which can be downloaded from GitHub \cite{Obfuscator}. The tool provides a command line interface for applying various obfuscation methods to JavaScript files. The obfuscator supports 18 obfuscation methods that can be applied, however, some of these methods are more tailored towards benign obfuscation which we eliminated from consideration. Seeing as one of the areas we were interested in exploring was how these methods interact with one another, we decided to reduce the set of methods further to decrease the number of potential method combinations to a manageable size. In total, we selected six methods which we choose based on our rough predictions of their effectiveness. These six methods, along with all 15 possible pair combinations of these options were then applied to our dataset and analysed.  These methods are highlighted below.
+
+\begin{itemize}
+    % TODO also mention how CFF will cause a notable increase in execution time. Can cite the obfuscation tool, the performance effects is dependent on the file size/complexity of the program
+    \item \textit{Control Flow Flattening}: this obfuscation method “flattens” the control flow of a program, making it harder to analyze the code. We used the default value of 0.75 for the obfuscation tool \cite{Obfuscator}.
+    \item \textit{Dead Code Insertion}: this obfuscation method adds additional lines of code to the file in an attempt to make it harder to follow the actual code of the file \cite{Obfuscator}. We used the default value of 0.4 for the obfuscation tool. It is important to realize that dead code insertion does increase the size of the code. If it is important that the malware file stay small in size, this may not be the ideal obfuscation method.
+    \item \textit{Identifier names generation}: this method changes the identifier names in the code. It provides two options, hex and mangled. The hex option changes identifiers to be hex values, and mangled uses short values for names. \cite{Obfuscator}
+    \item \textit{Self-Defending}: this option makes it so that the code is resilient to change \cite{Obfuscator}. Any attempt to rename or change the code structure will render the code un-executable. This can make it much harder to analyze code since it cannot be reformatted in anyway.
+    \item \textit{String Array Encoding}: this obfuscation method encodes string literals in the code to be base64 or rc4 \cite{Obfuscator}. In our case we used base64. This decision was due to the fact that using rc4 would lead to a greater slow down in execution time over base64. We do not want to change runtime too much for the malware.
+    \item \textit{Transform object keys}: this method changes the way that JavaScript objects are stored \cite{Obfuscator}. This is illustrated in figure \ref{fig:TOK}.
+\end{itemize}
+
+\begin{figure}
+\caption{Obfuscation with Transform Object Keys}
+\label{fig:TOK}
+\begin{minipage}[t]{0.45\columnwidth}
+\begin{lstlisting}
+// Input
+var object = {
+    foo: 'test1',
+    bar: {
+        baz: 'test2'
+    }
+};
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}[t]{0.45\columnwidth}
+\begin{lstlisting}
+// Output
+var _0x5a21 = [
+    'foo',
+    'test1',
+    'bar',
+    'baz',
+    'test2'
+];
+\end{lstlisting}
+\end{minipage}
+\end{figure}
+% TODO this stuff has a bug in it so idk, something weird about spacing? :(
+% \begin{table}
+%  \caption{Simulation Configuration}
+%
+%  \begin{minipage}{\columnwidth}
+% \begin{lstlisting}
+% // Output
+% var _0x5a21 = [
+%     'foo',
+%     'test1',
+%     'bar',
+%     'baz',
+%     'test2'
+% ];
+% \end{lstlisting}
+% \end{minipage}
+% \end{table}
+
+% TODO low priority, but not sure if figure is in a slightly odd spot
+\begin{figure*}
+    \includegraphics[width=\textwidth]{transparent}
+    \caption{Our Obuscation Pipeline}
+    \label{fig:Pipeline}
+\end{figure*}
+
+For the analysis of our dataset, we used VirusTotal's virus scan API which allowed us to upload files and receive a scan report which contained results from all the tools VirusTotal used in the scan \cite{VirusTotal}. In total, there are over 70 tools that VirusTotal can run on submitted files, however, each scan does not necessarily use the same set of tools. One of the main benefits VirusTotal provided was that it enabled us to automate the process of submitting files and retrieving results, allowing us to use a larger dataset of malware. By using VirusTotal, we were also able to abstract away from any particular tool which allowed us to gather data across a large set of tools.
+
+In order to ensure that the obfuscation methods being applied were not simply destroying the original source files, we used a  syntax-checking library which checked for any syntax errors in our obfuscated files \cite{SyntaxChecker}. The library itself has over 400 000 weekly downloads on npm and is still being maintained, so we assume its results are reliable. Throughout our obfuscation process, we did not observe a single occurrence of invalid-syntax, so we can also reasonably assume that the obfuscation tool does not output syntactically invalid JavaScript.
+
+We sampled malicious JavaScript files from a GitHub repository \cite{MalwareRepo}. The repository provides over 40 000 malware samples, but since each obfuscation method creates a new file that we must manage, we decided to only use the files provided in the 2015 folder, totaling to 1000 files. Our obfuscated files dataset along with the original samples are available in our project GitHub repository \cite{OurProjectRepo}, as well as the raw results of the VirusTotal scans and our code for analysing these results.
+
+The general workflow of our process is shown in figure \ref{fig:Pipeline}. For each obfuscation technique, we would upload the batch of 1000 obfuscated JavaScript files to VirusTotal then run our analysis scripts on the returned scan results.
+
+\section{Evaluation}
+
+In this study, we had two research questions that we set out to answer.
+
+\subsection{RQ1: What is the effectiveness of each obfuscation technique?}
+%
+% \begin{figure*}
+%     \includegraphics[width=\textwidth]{table1_chunk1}
+%     \caption{Obfuscation Detection Rates for Different Tool Whitelists (filters)}
+%     \label{fig:table1_chunk1}
+% \end{figure*}
+
+% TODO need to reference this table somewhere, right now its just a floating table we never mention lol
+\begin{table*}[]
+    \caption{Obfuscation Detection Accuracy for Different Tool Filters (In Percent)}
+    \label{table:table1_chunk1}
+    \begin{tabular}{llllllll}
+    filter                  & orig  & CFF   & DCI   & ING   & SD    & SAE   & TOK   \\
+    nofilter                & 62.26 & 12.16 & 26.78 & 27.01 & 22.91 & 23.60 & 28.91 \\
+    originalFiles-whitelist & 87.51 & 17.25 & 38.00 & 38.35 & 32.52 & 31.03 & 41.68 \\
+    official-whitelist      & 97.13 & 37.20 & 81.87 & 79.79 & 71.49 & 67.98 & 81.50
+    \end{tabular}
+\end{table*}
+
+As we briefly mentioned earlier, when we scanned the original (unobfuscated) files through VirusTotal we found that many of the tools performed inadequately. These tools either had extremely low detection rates or in some cases failed to detect even a single file. It seemed unlikely that a tool would perform better once we obfuscated the files, therefore we decided that these tools should be removed from our toolset as they would add very little value to our results. We filtered out any tools that had a detection rate less than 20\%. Once we began analysing our obfuscated dataset, we noticed that the detection accuracy of many tools dropped significantly. We were more interested in observing the results of competent tools so we needed to build a \textit{whitelist} of tools that we considered to be worthwhile. We ranked tools based on the number of obfuscation methods that the tool was able to detect, using a threshold of 20\%. Meaning if the tool had a detection accuracy greater than 20\% for a given method, we incremented that tools rank by one. From that point on the rest of our analysis used only results from the 18 highest ranked tools, we refer to this set as the \textit{official-whitelist} of tools (figure \ref{table:table1_chunk1}).
+
+After analyzing the results, we learned that control flow flattening is by far the most effective single obfuscation method, with an average tool detection rate of only 37.2\%. The next best method was found to be string array encoding with a detection rate of 67.98\%. The least effective method was dead code insertion at 81.87\%. This still gives us a detection rate better than the original files without obfuscation which was 97.13\%.
+
+When we pair two obfuscation methods, the best two methods use both control flow flattening and string array encoding. This is not surprising as these were the top two methods individually. One interesting observation is that when control flow flattening is paired with dead code insertion, it performs better than control flow flattening paired with transform object keys, which has detection rates at 35.31\% and 36.37\% respectively. Our worst two method obfuscation was when we combined dead code insertion with transformation of object keys, which performed slightly better than each does on their own, at 81.06\%.
+
+\subsection{RQ2: How well do the tools perform individually and how do they compare?}
+
+Our best performing tool on single method obfuscation was Kaspersky which had an average detection rate of 96.26\%. The next best tool was ZoneAlarm which had a detection rate of 96.25\%, putting it very close to Kaspersky. The worst tool we had was McAfee-GW-Edition with an average detection rate of 41.38\%. The majority of the tools we analysed performed the worst when control flow flattening was used to obfuscate. The mean detection rate across tools is 73.76\%
+
+What is interesting though is that our three best tools (Kaspersky, ZoneAlarm, and NANO-Antivirus) all perform the worst when identifier name generator is used as an obfuscation method. They still perform better than other tools, but this was the only method which had a consistent decrease in overall detection rate (A decrease of 6\%). A few tools, Qihoo-360, Ikarus, Microsoft, and McAfee-GW-Edition all perform the worst when string array encoding is used. Symantec performs very well as a tool, placing 4th, even though it cannot detect any malware that is obfuscated with self-defending. This result is possibly evidence of Symantec trying to alter the code in some way, triggering the self-defending, which then makes the tool fail to detect any malware. If we ignore the self-defending cases, we see that Symantec has a detection rate very comparable to NANO. Overall, we can see that some tools perform worse on certain obfuscation techniques, while others have little to no effect from that method.
+
+Moving onto cases where two obfuscation methods are used, We see that ZoneAlarm and Kaspersky actually have the same average detection rate, at 95.04\%. The worst tool is again McAfee-GW-Edition, at a mean detection rate of 18.63\%. The average across all tools is 58.37\%, this is dragged down mostly by control flow flattening with any other method, where the majority of the tools perform rather poorly. A few interesting results showed up here though. Ikarus has a detection rate of 25.00\% when string array encoding is used with self-defending, which is exceptionally high when compared to other obfuscation methods that also used string array encoding (all others falling below 5\%). Even just string array encoding alone has a lower detection rate than when paired with self-defending. TrendMicro performs exceptionally bad when self-defending and identifier name generator are used together, scoring 0.30\%, its next lowest detection rate is 18.88\% on control flow flattening with string array encoding. There must be something interesting going on with this interaction because individually it scores 51.8\% on self-defending and 76.3\% on identifier name generator. McAfee-GW-Edition scores a 0\% on code obfuscated with control flow flattening and string array encoding, this is only interesting because the only other case of a detection rate of 0\% is with Symantec and self-defending code, which it likely cannot handle. While McAfee is able to detect both methods individually, McAfee is unable to detect any malicious javaScript obfuscated with this pairing.
+
+Overall, We can see that our top ranked tools are rather resistant to most obfuscation methods, never dropping below 90\% for Kaspersky and ZoneAlarm on any obfuscation method and only having a noticeable dip when identifier name generator is used, regardless of what other obfuscation method is used.
+
+% TODO talk about rounding error
+
+\section{Limitations}
+The results of our study have limitations due to a number of assumptions that we made throughout the study:
+\begin{itemize}
+    \item \textbf{Is the Malware Malware?}: The malicious JavaScript samples that we used are supposedly malicious but without manual inspection of each file it would be very difficult to verify this, however, we are confident that at least 98\% of the files are malicious based on the scan results from VirusTotal.
+    \item \textbf{Code Destruction}: We provide a safety mechanism to detect if the obfuscator ever 'destroys' the input files by using a syntax checking library, but this does not account for potential program-behaviour-modification by the obfuscator.
+    \item \textbf{Randomness}: Since the obfuscator tool used some amount of randomness when performing obfuscation, the small differences in some of our results could simply be due to this randomness. This could be solved by seeding the obfuscation tool, which we only realized after collecting all our results.
+    \item \textbf{Verifiability}: While most of our process is automated and can be replicated, we cannot guarantee identical results due to our inherent dependency on VirusTotal. The tools that VirusTotal uses to generate its scans are likely updated often, also VirusTotal itself likely includes and removes tools from its toolset. While we do not think this would drastically alter our results, it could lead to some deviation in accuracy for anyone replicating our study.
+\end{itemize}
+
+\section{Related Work}
+
+\subsection{Similar Research in JavaScript Obfuscation}
+Wei Xu, Fangfang Zhang, and Sencun Zhu have also done similar research in this area, however they do not use the same tools and obfuscation methods that we used \cite{XuZhang}. In their paper, they use 4 obfuscation methods: randomization, encoding, data obfuscation, and logic structure obfuscation.  They introduce randomization by applying white space, comments and renaming variables and functions \cite{XuZhang}. This is similar to the identifier name generator that we use. Their data obfuscation is string computations, keyword substitution and number computations \cite{XuZhang}; we do not have a comparable obfuscation technique to this one. The last obfuscation technique they test is encoding, which is similar to our string array encoding, however they only use hexadecimal, ASCII, or unicode, whereas the method we used is base64 encoded. They mention logic structure obfuscation, but provide no results for it \cite{XuZhang}.
+
+\subsection{Detection using Machine Learning:}
+Research has also been done in looking at the application of machine learning to detect obfuscated Malicious JavaScript \cite{Likarish}. In this paper, the authors propose a classification based method for detecting the presence of obfuscation itself, which they consider to be a strong indicator for malware. A model using the classification based approach is advantageous because it can still detect malicious JavaScript even if it has never seen that particular instance before \cite{Likarish}. They find that classification is a viable method for building accurate detection tools but only if the feature vectors are carefully constructed. There are also drawbacks with classification, most notably the classifier can be susceptible to false positives \cite{Likarish}. Packing is the most likely obfuscation technique to create false positives, since packing is often used in a benign way to compress data sent from servers to clients \cite{Likarish}. Another weakness of classifiers is their use of feature vectors; if any attacker learns this feature vector they can modify their code to less exemplify those features, in which case the model would need to be retrained or new features would need to be identified \cite{Likarish}.
+
+\section{Future Work}
+
+There are a few areas of future work we have considered for this project:
+
+\begin{itemize}
+    \item For starters, we could apply additional obfuscation methods and see how they interact. Also, we only looked into single and paired methods, but it would be interesting to see results from applying 3 or more methods. There could also be further work in analysing dead code insertion and control flow flattening with varying threshold values, and measure the effectiveness of such thresholds.
+    \item We could also look into incorporating other languages into our analysis.
+    \item Many parts of our project are automated but some areas rely on user interaction, ideally we could increase the level of automation to streamline analysis.
+    \item Another area of interest would be looking more closely at the files themselves to see if certain ones are more susceptible to detection than others or if any avoid detection altogether. We are also interested in looking more into the tools themselves to possibly better explain some of the outliers we observerd.
+\end{itemize}
+
+\section{Conclusion}
+
+% TODO enumerate here
+Through this study, we found that the tools we analysed generally fell into one of three categories. Category one is the tools that perform well across all obfuscation results, this is Kaspersky, ZoneAlarm, and NANO. Category two is tools that perform well across all obfuscation results except control flow flattening, this is the biggest group. Category 3 is the tools that have the most trouble with string array encoding.
+
+We also found the best overall obfuscation method to be control flow flattening and the worst to be dead code insertion, followed closely by transformation of object keys. The data collected points out some of the weaknesses in detection software, showing where some need improvement, but also highlighting what each tool handles well. However, this also shows that if a malicious party knows what type of detection software they are up against, they can meaningfully pick an obfuscation method targeted towards that tool.
+
+\bibliography{bibliography}
+
+\appendix
+
+\section{Tables} This appendix contains the tables that were too large to fit into the paper.
+% \subsection{Table 1, Comparing Obfuscation Methods Across Different Toolsets}
+% \subsubsection{Single Obfuscation Methods}
+% \label{fig:table1_chunk1}
+% \begin{figure*}
+%     \includegraphics[width=\textwidth]{table1_chunk1}
+%     \caption{Comparing Single Obfuscation Methods Across Different Toolsets}
+%     \label{fig:table1_chunk1}
+% \end{figure*}
+
+% \subsubsection{Paired Obfuscation Methods}
+% \label{fig:table1_chunk2}
+\begin{figure*}
+    \includegraphics[width=\textwidth]{table1_chunk2}
+    \caption{Comparing Paired Obfuscation Methods Across Different Toolsets}
+    \label{fig:table1_chunk2}
+\end{figure*}
+
+% \subsection{Table 2, Comparing individual Tools Across Obfuscation Methods}
+% \subsubsection{Single Obfuscation Methods}
+% \label{fig:table1_chunk1}
+\begin{figure*}
+    \includegraphics[width=\textwidth]{table2_chunk1}
+    \caption{Comparing individual Tools Across Single Obfuscation Methods}
+    \label{fig:table2_chunk1}
+\end{figure*}
+
+% \subsubsection{Paired Obfuscation Methods}
+% \label{fig:table1_chunk1}
+\begin{figure*}
+    \includegraphics[width=\textwidth]{table2_chunk2}
+    \caption{Comparing individual Tools Across Paired Obfuscation Methods}
+    \label{fig:table2_chunk2}
+\end{figure*}
+
+
+
+
+
+
+
+
+
+
+\end{document}
